@@ -8,6 +8,13 @@ using Eigen::Vector3i;
 #include"Field.h"
 
 enum BoundaryCondition{CONST,CYCLIC,PML};
+struct SolverParams{
+  SolverParams();
+  Vector3i size;
+  BoundaryCondition bcond[6];
+  Real pml_sigma;
+  uint pml_thickness;
+};
 
 struct PMLpoint{
   Vector3d sigma;
@@ -40,7 +47,7 @@ public:
 
 class Solver{
 public:
-  Solver(Vector3i size);
+  Solver(SolverParams P);
   ~Solver();
   Vector3i size;
   Field E,H;
@@ -53,12 +60,11 @@ public:
    *b[4] - x=0
    *b[5] - x=max
    */
-  PMLayer* pml;
   void setE(Vector3d (*f)(Real,Real,Real));//f is a vector function in range [0,1]^3;
   void setH(Vector3d (*f)(Real,Real,Real));
-  void init();//Please call init() after setting up initial and boundary conditions, before calling step()
   void step();//changes both E and H
 private:
+  PMLayer* pml;
   char field_sign;//=1 for E and =-1 for H
 	uint mx,my,mz;
 	void copyExy();

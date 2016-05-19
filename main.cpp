@@ -26,8 +26,8 @@ void setTestWaves(Solver* solver){
       }
 }
 const Real
-  IMPACT_MIN=0.5,
-  IMPACT_MAX=0.6,
+  IMPACT_MIN=0.3,
+  IMPACT_MAX=0.7,
   IMPACT_WIDTH=IMPACT_MAX-IMPACT_MIN,
   AMPLITUDE=1;
 
@@ -75,7 +75,7 @@ void printFields(Solver* solver){
 	for(int z=0;z<size.z()+1;z++)
     for(int y=0;y<size.y()+1;y++){
       for(int x=0;x<size.x()+1;x++){
-        if(solver->H(x,y,z)!=Vector3d::Zero())
+        if(solver->H(x,y,z)!=Vector3d::Zero()||true)
           cout<<"("<<x<<":"<<y<<":"<<z<<"):"<<(solver->H(x,y,z)).transpose()<<endl;
       }
 		}
@@ -83,20 +83,23 @@ void printFields(Solver* solver){
 
 
 int main(){
-Solver* solver=new Solver(Vector3i(16,11,11));
-  solver->bcond[0]=CYCLIC;
-  solver->bcond[1]=CYCLIC;
-  solver->bcond[2]=CYCLIC;
-  solver->bcond[3]=CYCLIC;
-  solver->bcond[4]=PML;
-  solver->bcond[5]=PML;
+  SolverParams P;
+  P.size=Vector3i(8,8,8);
+  P.bcond[0]=CYCLIC;
+  P.bcond[1]=CYCLIC;
+  P.bcond[2]=CYCLIC;
+  P.bcond[3]=CYCLIC;
+  P.bcond[4]=CYCLIC;
+  P.bcond[5]=CYCLIC;
+	P.pml_sigma=1;
+	P.pml_thickness=1;
+  Solver* solver=new Solver(P);
   solver->setE(impactE);
   solver->setH(impactH);
-  solver->init();
+  printFields(solver);
   Visualizer vis(solver);
   vis.fieldtype=E;
   vis.framedelay=200;
-  //vis.Test();
   vis.makeGif("Waves.gif",32);
   delete solver;
   return 0;

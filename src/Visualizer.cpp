@@ -28,8 +28,8 @@ int Visualizer::Draw(mglGraph *gr){
     uint i0=(z*my+y)*mx+x;
     for(uint j=0;j<3;j++)v[j].a[i0]=field(j);
   }
-  v[0].a[0]=0.5;//I don't know, somehow it fixes the mgl's vector scaling
-  gr->Rotate(60,130);
+  v[0].a[0]=1;//I don't know, somehow it fixes the mgl's vector scaling
+  gr->Rotate(60,60);
   gr->Axis("_xyz");
   gr->Vect(v[0],v[1],v[2]);
   gr->Box();
@@ -54,7 +54,6 @@ void Visualizer::Test(const char* file,const uint Nframes){
   v[0].a[0]=1;
   gr.StartGIF(file,framedelay);
   cout<<"Making gif; frame:"<<endl;
-  float len=0.01;
   for(uint n=0;n<Nframes;n++){
     cout<<'\r'<<n<<'/'<<Nframes<<flush;
     if(n!=0)solver->step();

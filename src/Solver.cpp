@@ -5,7 +5,19 @@ using std::endl;
 
 extern bool DEBUG;
 
-PMLayer::PMLayer(uint t,double sigma,Vector3i s,BoundaryCondition bc[6]):thickness{t}{
+SolverParams::SolverParams(){
+  size=Vector3i(16,16,16);
+  bcond[0]=CYCLIC;
+  bcond[1]=CYCLIC;
+  bcond[2]=CYCLIC;
+  bcond[3]=CYCLIC;
+  bcond[4]=CYCLIC;
+  bcond[5]=CYCLIC;
+  pml_sigma=1;
+  pml_thickness=3;
+};
+
+PMLayer::PMLayer(uint t,Real sigma,Vector3i s,BoundaryCondition bc[6]):thickness{t}{
   uint mx=s.x(),my=s.y(),mz=s.z(),t2=t*2;
   uint N=mx*my*mz-(mx-t2)*(my-t2)*(mz-t2);
   points=new PMLpoint[N];
@@ -51,8 +63,27 @@ PMLayer::~PMLayer(){
   delete[] points;
 }
 
-Solver::Solver(Vector3i nsize):size{nsize},E{nsize+Vector3i(1,1,1)},H{nsize+Vector3i(1,1,1)}{
-  pml=nullptr;
+Solver::Solver(SolverParams P):size{P.size},E{P.size+Vector3i(1,1,1)},H{P.size+Vector3i(1,1,1)}{
+	for(uint i=0;i<6;i++)bcond[i]=P.bcond[i];
+	pml=nullptr;
+	for(uint i=0;i<6;i++){
+    if(bcond[i]==PML){
+      pml=new PMLayer(P.pml_thickness,P.pml_sigma,size,bcond);
+      break;
+    }
+  }
+  if(bcond[4]==CYCLIC){
+    copyEyz();
+		copyHyz();
+	}
+	if(bcond[2]==CYCLIC){
+		copyExz();
+		copyHxz();
+	}
+	if(bcond[0]==CYCLIC){
+		copyExy();
+		copyHxy();
+	}
 }
 
 Solver::~Solver(){
@@ -71,28 +102,6 @@ void Solver::setH(Vector3d (*f)(Real,Real,Real)){
   for(int y=1;y<=size.y();y++)
   for(int x=1;x<=size.x();x++)
 		H(x,y,z)=f((Real)x/size.x(),(Real)y/size.y(),(Real)z/size.z());
-}
-
-void Solver::init(){
-	if(!pml)delete[] pml;
-	for(uint i=0;i<6;i++){
-    if(bcond[i]==PML){
-      pml=new PMLayer(5,0.4,size,bcond);//TODO configurable thickness and sigma
-      break;
-    }
-  }
-  	if(bcond[4]==CYCLIC){
-			copyEyz();
-			copyHyz();
-		}
-  	if(bcond[2]==CYCLIC){
-			copyExz();
-			copyHxz();
-		}
-  	if(bcond[0]==CYCLIC){
-			copyExy();
-			copyHxy();
-		}
 }
 
 void Solver::copyExy(){
@@ -195,7 +204,6 @@ void Solver::applyPMLat(uint x,uint y,uint z,PMLpoint*& p){
 }
 
 void Solver::applyPML(){
-	if(!pml)return;
 	uint h=pml->thickness;
 	PMLpoint* p=pml->points;
 	uint mx=size.x();
@@ -228,7 +236,7 @@ void Solver::applyPML(){
 }
 
 void Solver::handleBoundary(){
-	applyPML();
+	if(pml)applyPML();
 	if(field_sign==1){
   	if(bcond[4]==CYCLIC)copyEyz();
   	if(bcond[2]==CYCLIC)copyExz();
@@ -241,7 +249,6 @@ void Solver::handleBoundary(){
 }
 
 void Solver::step(){
-  Vector3i size=E.getSize();
   uint mx=size.x()-1,my=size.y()-1,mz=size.z()-1;
 
   //calculate E
