@@ -61,41 +61,24 @@ Vector3d constant(Real x,Real y, Real z){
   return AMPLITUDE*Vector3d(1,0,0);
 }
 
-void printFields(Solver* solver){
-  Vector3i size=solver->size;
-	cout<<"E"<<endl;
-	for(int z=0;z<size.z()+1;z++)
-    for(int y=0;y<size.y()+1;y++){
-      for(int x=0;x<size.x()+1;x++){
-        if(solver->E(x,y,z)!=Vector3d::Zero())
-          cout<<"("<<x<<":"<<y<<":"<<z<<"):"<<(solver->E(x,y,z)).transpose()<<endl;
-      }
-		}
-	cout<<"H"<<endl;
-	for(int z=0;z<size.z()+1;z++)
-    for(int y=0;y<size.y()+1;y++){
-      for(int x=0;x<size.x()+1;x++){
-        if(solver->H(x,y,z)!=Vector3d::Zero())
-          cout<<"("<<x<<":"<<y<<":"<<z<<"):"<<(solver->H(x,y,z)).transpose()<<endl;
-      }
-		}
-}
-
-
 int main(){
   SolverParams P;
-  P.size=Vector3i(8,8,8);
+  P.size=Vector3i(16,16,16);
   P.bcond[0]=CYCLIC;
   P.bcond[1]=CYCLIC;
   P.bcond[2]=CYCLIC;
   P.bcond[3]=CYCLIC;
-  P.bcond[4]=CYCLIC;
-  P.bcond[5]=CYCLIC;
-	P.pml_sigma=0.5;
-	P.pml_thickness=1;
+  P.bcond[4]=PML;
+  P.bcond[5]=PML;
+	P.pml_sigma=0.1;
+	P.pml_thickness=5;
   Solver* solver=new Solver(P);
   solver->setE(tableE);
   solver->setH(tableH);
+  /*for(uint i=0;i<1;i++){
+    solver->step();
+    solver->print();
+  }*/
   Visualizer vis(solver);
   vis.fieldtype=E;
   vis.framedelay=200;

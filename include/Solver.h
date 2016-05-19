@@ -63,6 +63,7 @@ public:
   void setE(Vector3d (*f)(Real,Real,Real));//f is a vector function in range [0,1]^3;
   void setH(Vector3d (*f)(Real,Real,Real));
   void step();//changes both E and H
+  void print();
 private:
   PMLayer* pml;
   char field_sign;//=1 for E and =-1 for H

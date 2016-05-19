@@ -255,11 +255,11 @@ void Solver::handleBoundary(){
 }
 
 void Solver::step(){
-  uint mx=size.x(),my=size.y(),mz=size.z();
+  mx=size.x(),my=size.y(),mz=size.z();
 
   //calculate E
   Vector3d* pE=E.data;
-  for(uint z=0;z<mz;z++,pE+=size.x())
+  for(uint z=0;z<mz;z++,pE+=E.size.x())
   for(uint y=0;y<my;y++,pE++)
   for(uint x=0;x<mx;x++,pE++){
     (*pE)+=H.rot(Vector3i(x,y,z));
@@ -270,8 +270,8 @@ void Solver::step(){
 	handleBoundary();
 
   //calculate H
-  Vector3d* pH=H.data+size.x()*size.y()+size.x()+1;
-  for(uint z=0;z<mz;z++,pH+=size.x())
+  Vector3d* pH=H.data+E.size.x()*E.size.y()+E.size.x()+1;
+  for(uint z=0;z<mz;z++,pH+=E.size.x())
   for(uint y=0;y<my;y++,pH++)
   for(uint x=0;x<mx;x++,pH++){
     (*pH)-=E.rot(Vector3i(x,y,z));
@@ -282,3 +282,21 @@ void Solver::step(){
 	handleBoundary();
 }
 
+void Solver::print(){
+	cout<<"E:"<<endl;
+	for(int z=0;z<size.z()+1;z++)
+    for(int y=0;y<size.y()+1;y++){
+      for(int x=0;x<size.x()+1;x++){
+        if(E(x,y,z)!=Vector3d::Zero())
+          cout<<"("<<x<<":"<<y<<":"<<z<<"):"<<E(x,y,z).transpose()<<endl;
+      }
+		}
+	cout<<"H:"<<endl;
+	for(int z=0;z<size.z()+1;z++)
+    for(int y=0;y<size.y()+1;y++){
+      for(int x=0;x<size.x()+1;x++){
+        if(H(x,y,z)!=Vector3d::Zero())
+          cout<<"("<<x<<":"<<y<<":"<<z<<"):"<<H(x,y,z).transpose()<<endl;
+      }
+		}
+}
