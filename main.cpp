@@ -58,7 +58,7 @@ Vector3d tableH(Real x,Real y,Real z){
 }
 
 Vector3d constant(Real x,Real y, Real z){
-  return AMPLITUDE*Vector3d(0,0,0);
+  return AMPLITUDE*Vector3d(1,0,0);
 }
 
 void printFields(Solver* solver){
@@ -75,7 +75,7 @@ void printFields(Solver* solver){
 	for(int z=0;z<size.z()+1;z++)
     for(int y=0;y<size.y()+1;y++){
       for(int x=0;x<size.x()+1;x++){
-        if(solver->H(x,y,z)!=Vector3d::Zero()||true)
+        if(solver->H(x,y,z)!=Vector3d::Zero())
           cout<<"("<<x<<":"<<y<<":"<<z<<"):"<<(solver->H(x,y,z)).transpose()<<endl;
       }
 		}
@@ -91,12 +91,11 @@ int main(){
   P.bcond[3]=CYCLIC;
   P.bcond[4]=CYCLIC;
   P.bcond[5]=CYCLIC;
-	P.pml_sigma=1;
+	P.pml_sigma=0.5;
 	P.pml_thickness=1;
   Solver* solver=new Solver(P);
-  solver->setE(impactE);
-  solver->setH(impactH);
-  printFields(solver);
+  solver->setE(tableE);
+  solver->setH(tableH);
   Visualizer vis(solver);
   vis.fieldtype=E;
   vis.framedelay=200;

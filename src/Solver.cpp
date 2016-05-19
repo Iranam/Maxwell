@@ -95,6 +95,9 @@ void Solver::setE(Vector3d (*f)(Real,Real,Real)){
   for(int y=0;y<size.y();y++)
   for(int x=0;x<size.x();x++)
 		E(x,y,z)=f((Real)x/size.x(),(Real)y/size.y(),(Real)z/size.z());
+	if(bcond[4]==CYCLIC)copyEyz();
+	if(bcond[2]==CYCLIC)copyExz();
+	if(bcond[0]==CYCLIC)copyExy();
 }
 
 void Solver::setH(Vector3d (*f)(Real,Real,Real)){
@@ -102,6 +105,9 @@ void Solver::setH(Vector3d (*f)(Real,Real,Real)){
   for(int y=1;y<=size.y();y++)
   for(int x=1;x<=size.x();x++)
 		H(x,y,z)=f((Real)x/size.x(),(Real)y/size.y(),(Real)z/size.z());
+	if(bcond[4]==CYCLIC)copyHyz();
+	if(bcond[2]==CYCLIC)copyHxz();
+	if(bcond[0]==CYCLIC)copyHxy();
 }
 
 void Solver::copyExy(){
@@ -249,7 +255,7 @@ void Solver::handleBoundary(){
 }
 
 void Solver::step(){
-  uint mx=size.x()-1,my=size.y()-1,mz=size.z()-1;
+  uint mx=size.x(),my=size.y(),mz=size.z();
 
   //calculate E
   Vector3d* pE=E.data;
