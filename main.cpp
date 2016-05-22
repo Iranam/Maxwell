@@ -32,11 +32,13 @@ const Real
   AMPLITUDE=1;
 
 Vector3d wavesE(Real x,Real y, Real z){
-  return AMPLITUDE*Vector3d(0,0,cos(2*M_PI*x));
+  Real c=cos(2*M_PI*(x+y));
+  return -AMPLITUDE*Vector3d(0,0,c*sqrt(2));
 }
 
 Vector3d wavesH(Real x,Real y, Real z){
-  return AMPLITUDE*Vector3d(0,cos(2*M_PI*x),0);
+  Real c=cos(2*M_PI*(x+y));
+  return -AMPLITUDE*Vector3d(-c,c,0);
 }
 
 Vector3d impactE(Real x,Real y,Real z){
@@ -61,24 +63,33 @@ Vector3d constant(Real x,Real y, Real z){
   return AMPLITUDE*Vector3d(1,0,0);
 }
 
+const uint
+  RESONATOR_N_Y=2,
+  RESONATOR_N_X=1;//unused
+Vector3d resonatorE(Real x,Real y, Real z){
+  Real c=cos(2*M_PI*z);
+  return AMPLITUDE*c*Vector3d(0,sin(M_PI*RESONATOR_N_Y*x),0);
+}
+
+Vector3d resonatorH(Real x,Real y, Real z){
+  Real c=cos(2*M_PI*z);
+  return AMPLITUDE*c*Vector3d(-sin(M_PI*RESONATOR_N_Y*x),0,M_PI*cos(M_PI*RESONATOR_N_Y*x));
+}
+
 int main(){
   SolverParams P;
-  P.size=Vector3i(16,16,16);
+  P.size=Vector3i(4,4,4);
   P.bcond[0]=CYCLIC;
   P.bcond[1]=CYCLIC;
   P.bcond[2]=CYCLIC;
   P.bcond[3]=CYCLIC;
-  P.bcond[4]=PML;
-  P.bcond[5]=PML;
-	P.pml_sigma=0.1;
+  P.bcond[4]=CYCLIC;
+  P.bcond[5]=CYCLIC;
+	P.pml_sigma=1;
 	P.pml_thickness=5;
   Solver* solver=new Solver(P);
   solver->setE(tableE);
   solver->setH(tableH);
-  /*for(uint i=0;i<1;i++){
-    solver->step();
-    solver->print();
-  }*/
   Visualizer vis(solver);
   vis.fieldtype=E;
   vis.framedelay=200;

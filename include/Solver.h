@@ -7,7 +7,7 @@ using Eigen::Vector3i;
 #include"Typedefs.h"
 #include"Field.h"
 
-enum BoundaryCondition{CONST,CYCLIC,PML};
+enum BoundaryCondition{CONST,CYCLIC,REFLECTIVE,PML};
 struct SolverParams{
   SolverParams();
   Vector3i size;
@@ -74,9 +74,17 @@ private:
 	void copyHxy();
 	void copyHxz();
 	void copyHyz();
+	void reflectExy();
+	void reflectExz();
+	void reflectEyz();
+	void reflectHxy();
+	void reflectHxz();
+	void reflectHyz();
   void applyPML();
   void applyPMLat(uint x,uint y,uint z,PMLpoint*& p);
 	void handleBoundary();
+	void handleBoundaryE();
+	void handleBoundaryH();
 };
 
 #endif // SOLVER_H

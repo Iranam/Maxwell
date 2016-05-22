@@ -1,5 +1,5 @@
 #include"Solver.h"
-#include<iostream>//DEBUG
+#include<iostream>
 using std::cout;
 using std::endl;
 
@@ -65,6 +65,8 @@ PMLayer::~PMLayer(){
 
 Solver::Solver(SolverParams P):size{P.size},E{P.size+Vector3i(1,1,1)},H{P.size+Vector3i(1,1,1)}{
 	for(uint i=0;i<6;i++)bcond[i]=P.bcond[i];
+	handleBoundaryE();
+	handleBoundaryH();
 	pml=nullptr;
 	for(uint i=0;i<6;i++){
     if(bcond[i]==PML){
@@ -72,18 +74,6 @@ Solver::Solver(SolverParams P):size{P.size},E{P.size+Vector3i(1,1,1)},H{P.size+V
       break;
     }
   }
-  if(bcond[4]==CYCLIC){
-    copyEyz();
-		copyHyz();
-	}
-	if(bcond[2]==CYCLIC){
-		copyExz();
-		copyHxz();
-	}
-	if(bcond[0]==CYCLIC){
-		copyExy();
-		copyHxy();
-	}
 }
 
 Solver::~Solver(){
@@ -95,9 +85,7 @@ void Solver::setE(Vector3d (*f)(Real,Real,Real)){
   for(int y=0;y<size.y();y++)
   for(int x=0;x<size.x();x++)
 		E(x,y,z)=f((Real)x/size.x(),(Real)y/size.y(),(Real)z/size.z());
-	if(bcond[4]==CYCLIC)copyEyz();
-	if(bcond[2]==CYCLIC)copyExz();
-	if(bcond[0]==CYCLIC)copyExy();
+	handleBoundaryE();
 }
 
 void Solver::setH(Vector3d (*f)(Real,Real,Real)){
@@ -105,9 +93,7 @@ void Solver::setH(Vector3d (*f)(Real,Real,Real)){
   for(int y=1;y<=size.y();y++)
   for(int x=1;x<=size.x();x++)
 		H(x,y,z)=f((Real)x/size.x(),(Real)y/size.y(),(Real)z/size.z());
-	if(bcond[4]==CYCLIC)copyHyz();
-	if(bcond[2]==CYCLIC)copyHxz();
-	if(bcond[0]==CYCLIC)copyHxy();
+	handleBoundaryH();
 }
 
 void Solver::copyExy(){
@@ -139,6 +125,55 @@ void Solver::copyHyz(){
 	for(int z=1;z<=size.z();z++)
 	for(int y=1;y<=size.y();y++)
 		H(0,y,z)=H(size.x(),y,z);
+}
+
+void Solver::reflectExy(){
+	for(int y=0;y<=size.y();y++)
+	for(int x=0;x<=size.x();x++){
+		E(x,y,size.z()).x()=0;
+		E(x,y,size.z()).y()=0;
+		E(x,y,size.z()).z()=E(x,y,size.z()-1).z();
+	}
+}
+void Solver::reflectExz(){
+	for(int z=0;z<size.z();z++)
+	for(int x=0;x<=size.x();x++){
+		E(x,size.y(),z).x()=0;
+		E(x,size.y(),z).y()=E(x,size.y()-1,z).y();
+		E(x,size.y(),z).z()=0;
+	}
+}
+void Solver::reflectEyz(){
+	for(int z=0;z<size.z();z++)
+	for(int y=0;y<size.y();y++){
+		E(size.x(),y,z).x()=E(size.x()-1,y,z).x();
+		E(size.x(),y,z).y()=0;
+		E(size.x(),y,z).z()=0;
+	}
+}
+void Solver::reflectHxy(){
+	for(int y=0;y<=size.y();y++)
+	for(int x=0;x<=size.x();x++){
+		H(x,y,0).x()=H(x,y,1).x();
+		H(x,y,0).y()=H(x,y,1).y();
+		H(x,y,0).z()=0;
+	}
+}
+void Solver::reflectHxz(){
+	for(int z=1;z<=size.z();z++)
+	for(int x=0;x<=size.x();x++){
+		H(x,0,z).x()=H(x,1,z).x();
+		H(x,0,z).y()=0;
+		H(x,0,z).z()=H(x,1,z).z();
+	}
+}
+void Solver::reflectHyz(){
+	for(int z=1;z<=size.z();z++)
+	for(int y=1;y<=size.y();y++){
+		H(0,y,z).x()=0;
+		H(0,y,z).y()=H(1,y,z).y();
+		H(0,y,z).z()=H(1,y,z).z();
+	}
 }
 
 void Solver::applyPMLat(uint x,uint y,uint z,PMLpoint*& p){
@@ -241,17 +276,28 @@ void Solver::applyPML(){
 		applyPMLat(x,y,z,p);
 }
 
+void Solver::handleBoundaryE(){
+	if(bcond[5]==CYCLIC)copyEyz();
+	else if(bcond[5]==REFLECTIVE)reflectEyz();
+	if(bcond[3]==CYCLIC)copyExz();
+	else if(bcond[3]==REFLECTIVE)reflectExz();
+	if(bcond[1]==CYCLIC)copyExy();
+	else if(bcond[1]==REFLECTIVE)reflectExy();
+}
+
+void Solver::handleBoundaryH(){
+	if(bcond[4]==CYCLIC)copyHyz();
+	else if(bcond[4]==REFLECTIVE)reflectEyz();
+	if(bcond[2]==CYCLIC)copyHxz();
+	else if(bcond[2]==REFLECTIVE)reflectExz();
+	if(bcond[0]==CYCLIC)copyHxy();
+	else if(bcond[0]==REFLECTIVE)reflectHxy();
+}
+
 void Solver::handleBoundary(){
 	if(pml)applyPML();
-	if(field_sign==1){
-  	if(bcond[4]==CYCLIC)copyEyz();
-  	if(bcond[2]==CYCLIC)copyExz();
-  	if(bcond[0]==CYCLIC)copyExy();
-	}else{
-  	if(bcond[4]==CYCLIC)copyHyz();
-  	if(bcond[2]==CYCLIC)copyHxz();
-  	if(bcond[0]==CYCLIC)copyHxy();
-	}
+	if(field_sign==1)handleBoundaryE();
+	else handleBoundaryH();
 }
 
 void Solver::step(){
@@ -270,8 +316,8 @@ void Solver::step(){
 	handleBoundary();
 
   //calculate H
-  Vector3d* pH=H.data+E.size.x()*E.size.y()+E.size.x()+1;
-  for(uint z=0;z<mz;z++,pH+=E.size.x())
+  Vector3d* pH=H.data+H.size.x()*H.size.y()+H.size.x()+1;
+  for(uint z=0;z<mz;z++,pH+=H.size.x())
   for(uint y=0;y<my;y++,pH++)
   for(uint x=0;x<mx;x++,pH++){
     (*pH)-=E.rot(Vector3i(x,y,z));
@@ -280,6 +326,16 @@ void Solver::step(){
   //apply boundary H
   field_sign=-1;
 	handleBoundary();
+	//DEBUG
+	Real Emax=0;
+    for(uint z=0;z<size.z();z++)
+    for(uint y=0;y<size.y();y++)
+    for(uint x=0;x<size.x();x++){
+      Real L=E(x,y,z).norm();
+      if(L>Emax)Emax=L;
+    }
+    cout<<"Emax="<<Emax<<endl;
+
 }
 
 void Solver::print(){
